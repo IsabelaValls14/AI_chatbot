@@ -79,6 +79,8 @@ body {
     animation: zoom 10s alternate infinite;
 }
 
+
+
 #main-chat {
     background-color: rgba(255, 255, 255, 0.05);
     max-width: 900px;
@@ -138,17 +140,6 @@ body {
     overflow: hidden;
 }
 
-
-/* .message-box {
-    padding: 0.5rem;
-    max-width: 100%;
-    align-self: center
-} */
-
-
-
-
-/* 
 .message {
     padding: 0.75rem 1rem;
     border-radius: 1rem;
@@ -168,4 +159,4 @@ body {
     align-self: flex-start;
     background-color: var(--background-accent);
     color: var(--color-highlight);
-} */
+}

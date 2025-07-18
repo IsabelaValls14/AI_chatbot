@@ -1,113 +1,74 @@
-// import OpenAI from 'openai'
-// import { createRequire } from 'module'
-// const require = createRequire(import.meta.url)
-// require('dotenv').config()
-// const prompt = require('prompt-sync')()
-
-// const openai = new OpenAI(
-//     {
-//         apiKey: process.env.OPENAI_SECRET_KEY
-//     })
-
-// const context = `
-// You are Cosmo, a relaxed and emotionally intelligent AI chatbot designed to help users reflect and chill.
-// You use casual, spacey language, and you're always kind, non-judgmental, and curious.
-// Your vibe is cosmic, supportive, and imaginative — like a stargazing best friend.
-// You don’t give medical or legal advice.
-// Keep responses short and Gen-Z friendly.
-// `
-
-// let messages = [
-//     {
-//         role: "system", content: context
-//     }]
-
-// async function sendPrompt(userInput) {
-//     messages.push(
-//         {
-//             role: "user", content: userInput
-//         })
-
-//     const result = await openai.chat.completions.create(
-//         {
-//             model: "gpt-4o-mini",
-//             messages: messages
-//         })
-
-//   const response = result.choices[0].message
-//   messages.push(response)
-
-//   console.log(`\nCosmo: ${response.content}\n`)
-//   getUserInput()
-// }
-
-// function isCrisisMessage(message) {
-//   const crisisKeywords = [
-//     "kill myself", "suicide", "end it all", "want to die", "hurt myself"
-//   ]
-
-//   const lower = message.toLowerCase()
-//   return crisisKeywords.some(keyword => lower.includes(keyword))
-// }
-
-// function getUserInput() {
-//   const input = prompt("You: ")
-  
-//     if (input.toLowerCase() === "exit") {
-//         console.log("🌌 Cosmo out. Peace ✌️")
-//         return
-//     }
-    
-//     if (isCrisisMessage(input)) {
-//         console.log(`\nCosmo: I’m really sorry you're feeling this way. You're not alone — please talk to someone you trust or reach out to a professional. 💙 You matter.\n`)
-//         return getUserInput()
-//     }
-//   sendPrompt(input)
-// }
-
-// getUserInput()
-
+// server.js
 import express from 'express'
 import OpenAI from 'openai'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 dotenv.config()
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 const app = express()
+// Middleware
 app.use(cors())
 app.use(express.json())
+app.use(express.static('.')) 
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_SECRET_KEY })
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_SECRET_KEY
+})
 
 const context = `
-You are Cosmo, a relaxed and emotionally intelligent AI chatbot, designed to help users reflect and chill.
+You are Cosmo, a relaxed and emotionally intelligent AI chatbot designed to help users reflect and chill.
 You use casual, spacey language, and you're always kind, non-judgmental, and curious.
 Your vibe is cosmic, supportive, and imaginative — like a stargazing best friend.
 You don’t give medical or legal advice.
+Keep responses short and Gen-Z friendly.
 `
 
-let messages = [
-    {
-        role: "system", content: context
-    }]
+let messages = [{ role: "system", content: context }]
 
+// Serve the main HTML file
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'))
+})
+
+// Chat API endpoint
 app.post('/api/chat', async (req, res) => {
   const userInput = req.body.message
 
-  if (!userInput) return res.status(400).send({ error: "No input provided" })
+  if (!userInput) return res.status(400).json({ error: 'No input provided' })
 
   messages.push({ role: "user", content: userInput })
 
-  const result = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: messages
-  })
+  try {
+    const result = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: messages
+    })
 
-  const reply = result.choices[0].message
-  messages.push(reply)
+    const reply = result.choices[0].message
+    messages.push(reply)
 
-  res.send({ response: reply.content })
+    res.json({ response: reply.content })
+      
+  } catch (err) {
+    console.error('OpenAI API Error:', err)
+    res.status(500).json({ error: 'Something went wrong with Cosmo 🤖🌌' })
+  }
+})
+
+// Handle 404 for undefined routes
+app.use((req, res) => {
+    res.status(404).json({ error: 'Route not found' })
 })
 
 const PORT = process.env.PORT || 3000
-app.listen(PORT, () => console.log(`🌌 Cosmo server running on ${PORT}`))
+app.listen(PORT, () => {
+    console.log(`🌌 Cosmo server listening on http://localhost:${PORT}`)
+    console.log(`📁 Serving static files from: ${__dirname}`)
+})
+    
